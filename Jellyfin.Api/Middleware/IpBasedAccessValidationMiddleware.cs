@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using MediaBrowser.Common.Extensions;
 using MediaBrowser.Common.Net;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Api.Middleware;
 
@@ -12,14 +13,18 @@ namespace Jellyfin.Api.Middleware;
 public class IPBasedAccessValidationMiddleware
 {
     private readonly RequestDelegate _next;
+    private readonly ILogger<IPBasedAccessValidationMiddleware> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="IPBasedAccessValidationMiddleware"/> class.
     /// </summary>
     /// <param name="next">The next delegate in the pipeline.</param>
-    public IPBasedAccessValidationMiddleware(RequestDelegate next)
+    public IPBasedAccessValidationMiddleware(
+        RequestDelegate next,
+        ILogger logger)
     {
         _next = next;
+        _logger = logger;
     }
 
     /// <summary>
@@ -41,6 +46,9 @@ public class IPBasedAccessValidationMiddleware
 
         if (!networkManager.HasRemoteAccess(remoteIP))
         {
+            _logger.LogWarning(
+                "Rejected request from {RemoteIP} due to filtering rules",
+                remoteIP);
             return;
         }
 
